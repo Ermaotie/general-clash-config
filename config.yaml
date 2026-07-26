@@ -18,6 +18,9 @@ dns:
   nameserver:
     - https://dns.alidns.com/dns-query
     - https://dns.google/dns-query
+  proxy-server-nameserver:
+    - https://dns.google/dns-query
+    - https://cloudflare-dns.com/dns-query
 
 # This local profile currently uses only the self-hosted subscription.
 # Keep this file private: it contains the subscription URL.
