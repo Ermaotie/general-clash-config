@@ -59,11 +59,18 @@ export function inlineRuleProviders(profile, providerRules) {
     }
     const payload = providerRules[match[1]]
     if (!Array.isArray(payload)) throw new Error(`规则集「${match[1]}」格式无效`)
-    rules.push(...payload.map(rule => `${String(rule).trim()},${match[2]}`))
+    const behavior = configured[match[1]].behavior || 'classical'
+    rules.push(...payload.map(rule => inlineRule(String(rule).trim(), behavior, match[2])))
   }
   parsed.rules = rules
   delete parsed['rule-providers']
   return stringify(parsed, { lineWidth: 0 })
+}
+
+function inlineRule(rule, behavior, target) {
+  if (behavior !== 'domain') return `${rule},${target}`
+  if (rule.startsWith('+.')) return `DOMAIN-SUFFIX,${rule.slice(2)},${target}`
+  return `DOMAIN,${rule},${target}`
 }
 
 export function renderSnapshot(template, sources) {

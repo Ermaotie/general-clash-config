@@ -70,5 +70,8 @@ assert.doesNotMatch(fullyStatic, /rule-providers:/, 'Static profiles must not re
 assert.match(fullyStatic, /DOMAIN-SUFFIX,example\.cn,DIRECT/, 'Provider rules must be expanded inline')
 assert.match(fullyStatic, /MATCH,Default Proxy/, 'Non-provider rules must be retained')
 assert.doesNotMatch(inlineRuleProviders('rule-providers:\n  optional:\n    type: http\nrules:\n  - RULE-SET,optional,Emby\n', { optional: [] }), /RULE-SET/, 'Empty optional providers must be safely omitted')
+const domainRules = inlineRuleProviders('rule-providers:\n  ads:\n    type: http\n    behavior: domain\nrules:\n  - RULE-SET,ads,REJECT\n', { ads: ['ads.example.com', '+.tracker.example'] })
+assert.match(domainRules, /DOMAIN,ads\.example\.com,REJECT/, 'Domain providers must expand plain domains into valid rules')
+assert.match(domainRules, /DOMAIN-SUFFIX,tracker\.example,REJECT/, 'Domain providers must preserve suffix semantics')
 
 console.log('Snapshot rendering passed')
