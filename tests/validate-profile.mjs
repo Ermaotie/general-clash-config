@@ -23,8 +23,16 @@ for (const group of requiredGroups) {
 
 assert.match(profile, /GEOSITE,steam@cn,DIRECT/, 'Chinese Steam content must be direct')
 assert.match(profile, /MATCH,Default Proxy/, 'Unmatched traffic must use Default Proxy')
-assert.match(profile, /DOMAIN,tv\.micu\.hk,DIRECT/, 'tv.micu.hk must be direct')
-assert.match(profile, /DOMAIN-SUFFIX,micu\.hk,Default Proxy/, 'micu.hk must use Default Proxy')
+const directRules = readFileSync(new URL('../config/rules/direct.yaml', import.meta.url), 'utf8')
+const proxyRules = readFileSync(new URL('../config/rules/proxy.yaml', import.meta.url), 'utf8')
+assert.match(directRules, /DOMAIN,tv\.micu\.hk/, 'tv.micu.hk must be direct')
+assert.match(proxyRules, /DOMAIN-SUFFIX,micu\.hk/, 'micu.hk must use Default Proxy')
+assert.match(profile, /personal-direct:/, 'Missing personal direct rule provider')
+assert.match(profile, /personal-proxy:/, 'Missing personal proxy rule provider')
+assert.match(profile, /personal-emby:/, 'Missing personal Emby rule provider')
+assert.match(profile, /RULE-SET,personal-direct,DIRECT/, 'Personal direct rules must be applied')
+assert.match(profile, /RULE-SET,personal-proxy,Default Proxy/, 'Personal proxy rules must be applied')
+assert.match(profile, /RULE-SET,personal-emby,Emby/, 'Personal Emby rules must be applied')
 
 assert.match(profile, /__SELF_HOSTED_PROVIDERS__/, 'Missing self-hosted subscription provider placeholder')
 assert.match(profile, /__AIRPORT_PROVIDERS__/, 'Missing airport provider placeholder')
