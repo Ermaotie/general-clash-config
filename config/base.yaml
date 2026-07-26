@@ -104,20 +104,38 @@ rule-providers:
     url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-media.yaml
     path: ./rule_providers/media.yaml
     interval: 86400
+  personal-direct:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://github.com/Ermaotie/general-clash-config/raw/refs/heads/main/config/rules/direct.yaml
+    path: ./rule_providers/personal-direct.yaml
+    interval: 3600
+  personal-proxy:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://github.com/Ermaotie/general-clash-config/raw/refs/heads/main/config/rules/proxy.yaml
+    path: ./rule_providers/personal-proxy.yaml
+    interval: 3600
+  personal-emby:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://github.com/Ermaotie/general-clash-config/raw/refs/heads/main/config/rules/emby.yaml
+    path: ./rule_providers/personal-emby.yaml
+    interval: 3600
 
 rules:
-  # LAN, private address space, and personal overrides always win.
-  # Add more personal rules in this block; keep a specific direct rule above
-  # an overlapping proxy suffix rule.
+  # LAN and personal rules always win.
   - GEOSITE,private,DIRECT
   - GEOIP,private,DIRECT,no-resolve
-  - DOMAIN,tv.micu.hk,DIRECT
-  - DOMAIN-SUFFIX,oceancloud.asia,Default Proxy
-  - DOMAIN-SUFFIX,micu.hk,Default Proxy
+  - RULE-SET,personal-direct,DIRECT
+  - RULE-SET,personal-proxy,Default Proxy
   - RULE-SET,ads,REJECT
 
-  # Add Emby hostnames here in the form: DOMAIN-SUFFIX,emby.example.com,Emby
   # Service-specific routes.
+  - RULE-SET,personal-emby,Emby
   - RULE-SET,ai-openai,AI
   - RULE-SET,ai-claude,AI
   - RULE-SET,ai-gemini,AI
