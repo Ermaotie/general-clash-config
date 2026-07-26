@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { renderSnapshot, parseSubscription } from '../service/src/snapshot.js'
+import { inlineRuleProviders, parseRuleProvider, renderSnapshot, parseSubscription } from '../service/src/snapshot.js'
 
 const template = `proxies:
   __PROXIES__
@@ -41,6 +41,7 @@ const airport = {
 
 assert.deepEqual(parseSubscription(selfHosted.yaml).map(proxy => proxy.name), ['HK'], 'Clash YAML subscriptions must expose their nodes')
 assert.throws(() => parseSubscription('proxies: invalid'), /proxies/, 'Invalid subscriptions must be rejected before snapshots are overwritten')
+assert.deepEqual(parseRuleProvider('payload:\n  - DOMAIN,example.com'), ['DOMAIN,example.com'], 'Rule provider payloads must be parsed before snapshotting')
 
 const profile = renderSnapshot(template, [selfHosted, airport])
 assert.match(profile, /name: .*SelfNode.*HK/, 'Self-hosted nodes must use the SelfNode fallback prefix')
@@ -56,5 +57,16 @@ for (const group of ['Default Proxy', 'AI', 'Media', 'Emby']) {
   assert.match(block, /SelfNode/, `${group} must include self-hosted nodes`)
   assert.doesNotMatch(block, /Airport/, `${group} must not include airport nodes`)
 }
+
+const fullyStatic = inlineRuleProviders(`rule-providers:
+  sample:
+    type: http
+rules:
+  - RULE-SET,sample,DIRECT
+  - MATCH,Default Proxy
+`, { sample: ['DOMAIN-SUFFIX,example.cn', 'DOMAIN,example.org'] })
+assert.doesNotMatch(fullyStatic, /rule-providers:/, 'Static profiles must not retain dynamic rule providers')
+assert.match(fullyStatic, /DOMAIN-SUFFIX,example\.cn,DIRECT/, 'Provider rules must be expanded inline')
+assert.match(fullyStatic, /MATCH,Default Proxy/, 'Non-provider rules must be retained')
 
 console.log('Snapshot rendering passed')

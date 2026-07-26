@@ -23,6 +23,18 @@ export function parseSubscription(body) {
   return parsed.proxies
 }
 
+export function parseRuleProvider(body) {
+  let parsed
+  try {
+    parsed = parse(body)
+  } catch {
+    throw new Error('规则集不是有效的 YAML')
+  }
+  const payload = parsed?.payload || parsed?.rules
+  if (!Array.isArray(payload) || payload.some(rule => !String(rule || '').trim())) throw new Error('规则集缺少有效 payload')
+  return payload.map(rule => String(rule).trim())
+}
+
 function mergeNodes(sources) {
   const used = new Set()
   return sources.flatMap(source => parseSubscription(source.yaml).map(proxy => {
@@ -33,6 +45,25 @@ function mergeNodes(sources) {
     used.add(name)
     return { ...proxy, name, __kind: source.kind }
   }))
+}
+
+export function inlineRuleProviders(profile, providerRules) {
+  const parsed = parse(profile)
+  const configured = parsed?.['rule-providers'] || {}
+  const rules = []
+  for (const entry of parsed?.rules || []) {
+    const match = String(entry).match(/^RULE-SET,([^,]+),(.+)$/)
+    if (!match || !configured[match[1]]) {
+      rules.push(entry)
+      continue
+    }
+    const payload = providerRules[match[1]]
+    if (!Array.isArray(payload) || payload.length === 0) throw new Error(`规则集「${match[1]}」为空或格式无效`)
+    rules.push(...payload.map(rule => `${String(rule).trim()},${match[2]}`))
+  }
+  parsed.rules = rules
+  delete parsed['rule-providers']
+  return stringify(parsed, { lineWidth: 0 })
 }
 
 export function renderSnapshot(template, sources) {

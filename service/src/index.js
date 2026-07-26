@@ -1,4 +1,5 @@
-import { parseSubscription, renderSnapshot } from './snapshot.js'
+import { inlineRuleProviders, parseRuleProvider, parseSubscription, renderSnapshot } from './snapshot.js'
+import { parse } from 'yaml'
 
 const TEMPLATE_URL = 'https://github.com/Ermaotie/general-clash-config/raw/refs/heads/main/config/base.yaml'
 const SNAPSHOT_KEY = 'profile.yaml'
@@ -71,7 +72,15 @@ export async function refreshSnapshot(env, configuredSettings) {
       ...current.providers.map(source => fetchText(source.url, `订阅源「${source.name}」`))
     ])
     const sources = current.providers.map((source, index) => ({ ...source, yaml: subscriptions[index] }))
-    const profile = renderSnapshot(template, sources)
+    const dynamicProfile = renderSnapshot(template, sources)
+    const ruleProviders = parse(dynamicProfile)?.['rule-providers'] || {}
+    const providerEntries = Object.entries(ruleProviders)
+    const providerBodies = await Promise.all(providerEntries.map(([name, provider]) => {
+      if (!provider?.url) throw new Error(`规则集「${name}」缺少地址`)
+      return fetchText(provider.url, `规则集「${name}」`)
+    }))
+    const providerRules = Object.fromEntries(providerEntries.map(([name], index) => [name, parseRuleProvider(providerBodies[index])]))
+    const profile = inlineRuleProviders(dynamicProfile, providerRules)
     const nodeCount = sources.reduce((total, source) => total + parseSubscription(source.yaml).length, 0)
     await env.SNAPSHOTS.put(SNAPSHOT_KEY, profile, { httpMetadata: { contentType: 'text/yaml; charset=utf-8' } })
     const state = { status: 'ready', updatedAt: new Date().toISOString(), attemptedAt, nodeCount, lastError: null }
