@@ -47,6 +47,8 @@ const worker = readFileSync(new URL('../service/src/index.js', import.meta.url),
 for (const token of ['providers', 'clipboard.writeText', 'clash://install-config', 'shadowrocket://add/', 'stash://']) {
   assert.match(worker, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `Missing UI support: ${token}`)
 }
+assert.match(worker, /MySub-/, 'Device subscriptions must have a friendly filename prefix')
+assert.match(worker, /SELECT id,name FROM devices/, 'Subscription filename must use the device name')
 const workflow = readFileSync(new URL('../.github/workflows/validate-and-deploy.yml', import.meta.url), 'utf8')
 assert.match(workflow, /node tests\/validate-profile\.mjs/, 'Workflow must validate the template')
 assert.match(workflow, /wrangler deploy/, 'Workflow must deploy the Worker')
