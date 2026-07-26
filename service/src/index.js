@@ -78,7 +78,7 @@ export default { async fetch(request, env) {
     const settings = normalizeSettings(await open(row.encrypted_value, env)); const remote = await fetch(`${TEMPLATE_URL}?updated=${Date.now()}`);
     if (!remote.ok) return new Response('Rule template unavailable', { status: 503 });
     let yaml; try { yaml = renderTemplate(await remote.text(), settings.providers); } catch { return new Response('Subscription source not configured', { status: 503 }); }
-    return new Response(yaml, { headers: { 'content-type': 'text/yaml;charset=utf-8', 'cache-control': 'private, max-age=300', 'content-disposition': `attachment; filename="${profileFilename(device.name)}"`, 'profile-update-interval': '24' } });
+    return new Response(yaml, { headers: { 'content-type': 'text/yaml;charset=utf-8', 'cache-control': 'private, max-age=300', 'content-disposition': `attachment; filename=${profileFilename(device.name)}`, 'profile-update-interval': '24' } });
   }
   return new Response('Not found', { status: 404 });
 } };
