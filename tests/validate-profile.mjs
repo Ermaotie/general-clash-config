@@ -51,7 +51,7 @@ for (const path of ['service/src/index.js', 'service/src/snapshot.js', 'service/
   assert.ok(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').length > 0, `Missing ${path}`)
 }
 const worker = readFileSync(new URL('../service/src/index.js', import.meta.url), 'utf8')
-for (const token of ['providers', 'clipboard.writeText', 'clash://install-config', 'shadowrocket://add/', 'stash://']) {
+for (const token of ['providers', 'clipboard.writeText', 'clash://install-config', 'shadowrocket://add/', 'stash://', '已生成设备', 'token_encrypted', '/api/manage/devices', 'DELETE']) {
   assert.match(worker, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `Missing UI support: ${token}`)
 }
 assert.match(worker, /MySub-/, 'Device subscriptions must have a friendly filename prefix')
@@ -77,6 +77,7 @@ assert.match(workflow, /node tests\/validate-profile\.mjs/, 'Workflow must valid
 assert.match(workflow, /node tests\/snapshot\.mjs/, 'Workflow must validate static snapshot rendering')
 assert.match(workflow, /npm ci/, 'Workflow must install Worker dependencies before deployment')
 assert.match(workflow, /wrangler deploy/, 'Workflow must deploy the Worker')
+assert.match(workflow, /d1 migrations apply/, 'Workflow must apply database migrations before deployment')
 assert.doesNotMatch(workflow, /ADMIN_TOKEN|CONFIG_KEY/, 'Workflow must not expose worker secrets')
 assert.doesNotMatch(workflow, /if:\s*\$\{\{\s*secrets\./, 'GitHub Actions cannot access secrets directly in a step condition')
 for (const label of ['Validate profile template', 'Check deployment credential', 'Refresh static snapshot', 'Publish run summary', 'GITHUB_STEP_SUMMARY']) {
