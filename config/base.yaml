@@ -1,0 +1,132 @@
+# Portable Mihomo/OpenClash routing template.
+# Do not put this file in a public repository: it contains a subscription URL.
+mixed-port: 7890
+ipv6: true
+allow-lan: true
+mode: rule
+log-level: warning
+
+dns:
+  enable: true
+  ipv6: true
+  respect-rules: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://dns.google/dns-query
+  proxy-server-nameserver:
+    - https://dns.google/dns-query
+    - https://cloudflare-dns.com/dns-query
+
+# Subscription URLs are injected privately by the Worker at request time.
+proxy-providers:
+  __SELF_HOSTED_PROVIDERS__
+  __AIRPORT_PROVIDERS__
+proxy-groups:
+  - name: Automatic
+    type: url-test
+    use:
+      __SELF_HOSTED_USES__
+    url: https://www.gstatic.com/generate_204
+    interval: 600
+    tolerance: 50
+  - name: Manual
+    type: select
+    proxies: [Automatic, DIRECT, REJECT]
+    use:
+      __SELF_HOSTED_USES__
+    __AIRPORT_USES__
+  - name: Default Proxy
+    type: select
+    proxies: [Automatic, Manual, DIRECT, REJECT]
+    use:
+      __SELF_HOSTED_USES__
+  - name: AI
+    type: select
+    proxies: [Automatic, Manual, DIRECT, REJECT]
+    use:
+      __SELF_HOSTED_USES__
+  - name: Media
+    type: select
+    proxies: [Automatic, Manual, DIRECT, REJECT]
+    use:
+      __SELF_HOSTED_USES__
+  - name: Emby
+    type: select
+    proxies: [Automatic, Manual, DIRECT, REJECT]
+    use:
+      __SELF_HOSTED_USES__
+
+rule-providers:
+  ads:
+    type: http
+    behavior: domain
+    format: yaml
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ads-all.yaml
+    path: ./rule_providers/ads.yaml
+    interval: 86400
+  ai-openai:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/OpenAI/OpenAI.yaml
+    path: ./rule_providers/ai-openai.yaml
+    interval: 86400
+  ai-claude:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Claude/Claude.yaml
+    path: ./rule_providers/ai-claude.yaml
+    interval: 86400
+  ai-gemini:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Gemini/Gemini.yaml
+    path: ./rule_providers/ai-gemini.yaml
+    interval: 86400
+  ai-copilot:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Copilot/Copilot.yaml
+    path: ./rule_providers/ai-copilot.yaml
+    interval: 86400
+  media:
+    type: http
+    behavior: domain
+    format: yaml
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-media.yaml
+    path: ./rule_providers/media.yaml
+    interval: 86400
+
+rules:
+  # LAN, private address space, and personal overrides always win.
+  # Add more personal rules in this block; keep a specific direct rule above
+  # an overlapping proxy suffix rule.
+  - GEOSITE,private,DIRECT
+  - GEOIP,private,DIRECT,no-resolve
+  - DOMAIN,tv.micu.hk,DIRECT
+  - DOMAIN-SUFFIX,oceancloud.asia,Default Proxy
+  - DOMAIN-SUFFIX,micu.hk,Default Proxy
+  - RULE-SET,ads,REJECT
+
+  # Add Emby hostnames here in the form: DOMAIN-SUFFIX,emby.example.com,Emby
+  # Service-specific routes.
+  - RULE-SET,ai-openai,AI
+  - RULE-SET,ai-claude,AI
+  - RULE-SET,ai-gemini,AI
+  - RULE-SET,ai-copilot,AI
+  - RULE-SET,media,Media
+  - GEOSITE,steam@cn,DIRECT
+  - GEOSITE,steam,Default Proxy
+
+  # Mainland services remain direct; everything else is explicitly proxied.
+  - GEOSITE,cn,DIRECT
+  - GEOIP,CN,DIRECT,no-resolve
+  - MATCH,Default Proxy
