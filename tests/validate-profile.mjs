@@ -6,6 +6,7 @@ const profile = readFileSync(new URL('../config/base.yaml', import.meta.url), 'u
 const requiredGroups = ['Manual', 'Default Proxy', 'AI', 'Media', 'Emby']
 
 assert.match(profile, /^ipv6:\s*true\s*$/m, 'IPv6 must remain enabled')
+assert.match(profile, /url:\s*https:\/\/cp\.cloudflare\.com\/generate_204/, 'Automatic testing must use the IPv6-friendly Cloudflare endpoint')
 for (const group of requiredGroups) {
   assert.match(profile, new RegExp(`name: ${group.replace(' ', '\\s+')}`), `Missing selector: ${group}`)
 }
