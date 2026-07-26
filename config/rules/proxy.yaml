@@ -1,0 +1,4 @@
+# Rules in this list always use the Default Proxy selector.
+payload:
+  - DOMAIN-SUFFIX,oceancloud.asia
+  - DOMAIN-SUFFIX,micu.hk
