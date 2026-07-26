@@ -21,6 +21,24 @@ jobs:
       - name: Validate profile template
         id: validate
         run: node tests/snapshot.mjs && node tests/validate-profile.mjs
+      - name: Render static profile for Mihomo
+        id: render_mihomo
+        run: node tests/render-mihomo-profile.mjs "$RUNNER_TEMP/mihomo-profile.yaml"
+      - name: Install Mihomo kernel
+        id: install_mihomo
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_json="$(curl --fail --silent --show-error --location https://api.github.com/repos/MetaCubeX/mihomo/releases/latest)"
+          asset_url="$(jq --raw-output '.assets[] | select(.name | test("^mihomo-linux-amd64-compatible-v[0-9.]+\\.gz$")) | .browser_download_url' <<< "$release_json" | head -n 1)"
+          test -n "$asset_url"
+          curl --fail --silent --show-error --location "$asset_url" --output "$RUNNER_TEMP/mihomo.gz"
+          gzip --decompress "$RUNNER_TEMP/mihomo.gz"
+          chmod +x "$RUNNER_TEMP/mihomo"
+          echo "path=$RUNNER_TEMP/mihomo" >> "$GITHUB_OUTPUT"
+      - name: Mihomo kernel validation
+        id: mihomo_validate
+        run: ${{ steps.install_mihomo.outputs.path }} -t -f "$RUNNER_TEMP/mihomo-profile.yaml"
       - name: Check deployment credential
         id: credential
         shell: bash
@@ -62,6 +80,7 @@ jobs:
         run: |
           echo "## 订阅服务发布结果" >> "$GITHUB_STEP_SUMMARY"
           echo "- 配置验证：${{ steps.validate.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mihomo 内核校验：${{ steps.mihomo_validate.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Cloudflare 凭据：${{ steps.credential.outputs.available == 'true' && '已配置' || '缺少，已跳过部署' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Worker 部署：${{ steps.deploy_worker.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.deploy_worker.outcome }}" != "success" ]; then
