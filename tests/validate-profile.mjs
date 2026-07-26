@@ -56,6 +56,7 @@ for (const token of ['providers', 'clipboard.writeText', 'clash://install-config
 }
 assert.match(worker, /cache-control': 'no-store'/, 'Management page and device list must not be served from a stale cache')
 assert.match(worker, /MySub-/, 'Device subscriptions must have a friendly filename prefix')
+assert.match(worker, /url\.pathname === '\/' \|\| url\.pathname === '\/admin'/, 'Root path must serve the management page')
 assert.match(worker, /SELECT id,name FROM devices/, 'Subscription filename must use the device name')
 for (const token of ['prefix', 'providers', 'refreshSnapshot']) {
   assert.match(worker, new RegExp(token), `Missing provider prefix support: ${token}`)
@@ -84,7 +85,7 @@ assert.match(workflow, /wrangler deploy/, 'Workflow must deploy the Worker')
 assert.match(workflow, /d1 migrations apply/, 'Workflow must apply database migrations before deployment')
 assert.doesNotMatch(workflow, /ADMIN_TOKEN|CONFIG_KEY/, 'Workflow must not expose worker secrets')
 assert.doesNotMatch(workflow, /if:\s*\$\{\{\s*secrets\./, 'GitHub Actions cannot access secrets directly in a step condition')
-for (const label of ['Validate profile template', 'Check deployment credential', 'Refresh static snapshot', 'Publish run summary', 'GITHUB_STEP_SUMMARY']) {
+for (const label of ['Validate profile template', 'Check deployment credential', 'Refresh static snapshot', 'Publish run summary', 'GITHUB_STEP_SUMMARY', '未执行（Worker 部署失败）']) {
   assert.match(workflow, new RegExp(label), `Workflow must report ${label}`)
 }
 

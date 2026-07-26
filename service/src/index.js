@@ -134,7 +134,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url)
     if (url.pathname === '/__scheduled') return new Response('Not found', { status: 404 })
-    if (url.pathname === '/admin') return new Response(pageWithDevices(), { headers: { 'content-type': 'text/html;charset=utf-8', 'cache-control': 'no-store' } })
+    if (url.pathname === '/' || url.pathname === '/admin') return new Response(pageWithDevices(), { headers: { 'content-type': 'text/html;charset=utf-8', 'cache-control': 'no-store' } })
     if (url.pathname === '/api/settings' && request.method === 'GET') {
       if (!authorized(request, env)) return new Response('Unauthorized', { status: 401 })
       return Response.json((await settings(env)) || { providers: [] })
