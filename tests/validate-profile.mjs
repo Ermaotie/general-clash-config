@@ -40,6 +40,7 @@ assert.doesNotMatch(profile, /proxy-providers:/, 'Device profiles must not dynam
 assert.match(profile, /ads:\n\s+type: http\n\s+behavior: domain/, 'Ad rules must use domain behavior')
 assert.match(profile, /media:\n\s+type: http\n\s+behavior: domain/, 'Media rules must use domain behavior')
 assert.match(profile, /proxy-server-nameserver:/, 'DNS respect-rules requires proxy-server-nameserver')
+assert.match(profile, /proxy-server-nameserver:[\s\S]*223\.5\.5\.5[\s\S]*119\.29\.29\.29/, 'Proxy node hostnames must have domestic DNS resolvers')
 
 for (const path of ['service/src/index.js', 'service/src/snapshot.js', 'service/schema.sql', 'service/wrangler.jsonc']) {
   assert.ok(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').length > 0, `Missing ${path}`)

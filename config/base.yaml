@@ -17,10 +17,14 @@ dns:
     - 119.29.29.29
   nameserver:
     - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
     - https://dns.google/dns-query
   proxy-server-nameserver:
-    - https://dns.google/dns-query
-    - https://cloudflare-dns.com/dns-query
+    # Node hostnames resolve through domestic DNS first, independent of proxy availability.
+    - 223.5.5.5
+    - 119.29.29.29
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
 
 # Real proxy definitions are injected privately while refreshing the static snapshot.
 proxies:
