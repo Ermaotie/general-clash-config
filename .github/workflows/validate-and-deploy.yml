@@ -36,9 +36,18 @@ jobs:
           gzip --decompress "$RUNNER_TEMP/mihomo.gz"
           chmod +x "$RUNNER_TEMP/mihomo"
           echo "path=$RUNNER_TEMP/mihomo" >> "$GITHUB_OUTPUT"
+      - name: Prepare Mihomo geodata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mihomo-home"
+          curl --fail --silent --show-error --location https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat --output "$RUNNER_TEMP/mihomo-home/GeoSite.dat"
+          curl --fail --silent --show-error --location https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat --output "$RUNNER_TEMP/mihomo-home/GeoIP.dat"
+          curl --fail --silent --show-error --location https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country.mmdb --output "$RUNNER_TEMP/mihomo-home/Country.mmdb"
+          curl --fail --silent --show-error --location https://github.com/xishang0128/geoip/releases/download/latest/GeoLite2-ASN.mmdb --output "$RUNNER_TEMP/mihomo-home/ASN.mmdb"
       - name: Mihomo kernel validation
         id: mihomo_validate
-        run: ${{ steps.install_mihomo.outputs.path }} -t -f "$RUNNER_TEMP/mihomo-profile.yaml"
+        run: ${{ steps.install_mihomo.outputs.path }} -d "$RUNNER_TEMP/mihomo-home" -t -f "$RUNNER_TEMP/mihomo-profile.yaml"
       - name: Check deployment credential
         id: credential
         shell: bash
