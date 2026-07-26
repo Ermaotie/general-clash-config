@@ -83,6 +83,8 @@ assert.match(workflow, /node tests\/snapshot\.mjs/, 'Workflow must validate stat
 assert.match(workflow, /Render static profile for Mihomo/, 'Workflow must render a complete static profile before kernel validation')
 assert.match(workflow, /install_mihomo\.outputs\.path \}\} -t -f/, 'Workflow must ask the Mihomo kernel to validate the rendered profile')
 assert.match(workflow, /Mihomo kernel validation/, 'Workflow must publish Mihomo validation in the run summary')
+assert.match(workflow, /GeoSite\\.dat/, 'Workflow must provision geodata needed by GEOSITE rules')
+assert.match(workflow, /GeoLite2-ASN\\.mmdb/, 'Workflow must provision ASN data needed by AI rules')
 assert.match(workflow, /npm ci/, 'Workflow must install Worker dependencies before deployment')
 assert.match(workflow, /wrangler deploy/, 'Workflow must deploy the Worker')
 assert.match(workflow, /d1 migrations apply/, 'Workflow must apply database migrations before deployment')
