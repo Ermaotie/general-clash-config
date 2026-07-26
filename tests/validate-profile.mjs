@@ -32,6 +32,7 @@ assert.match(profile, /personal-emby:/, 'Missing personal Emby rule provider')
 assert.match(profile, /RULE-SET,personal-direct,DIRECT/, 'Personal direct rules must be applied')
 assert.match(profile, /RULE-SET,personal-proxy,Default Proxy/, 'Personal proxy rules must be applied')
 assert.match(profile, /RULE-SET,personal-emby,Emby/, 'Personal Emby rules must be applied')
+assert.ok(profile.indexOf('RULE-SET,personal-emby,Emby') < profile.indexOf('RULE-SET,personal-proxy,Default Proxy'), 'Personal Emby rules must win over broad proxy rules')
 
 assert.match(profile, /__PROXIES__/, 'Static snapshots must inject real proxy definitions')
 assert.match(profile, /__SELF_HOSTED_PROXY_NAMES__/, 'Static snapshots must inject self-hosted node names')

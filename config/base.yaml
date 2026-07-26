@@ -128,11 +128,11 @@ rules:
   - GEOSITE,private,DIRECT
   - GEOIP,private,DIRECT,no-resolve
   - RULE-SET,personal-direct,DIRECT
+  - RULE-SET,personal-emby,Emby
   - RULE-SET,personal-proxy,Default Proxy
   - RULE-SET,ads,REJECT
 
   # Service-specific routes.
-  - RULE-SET,personal-emby,Emby
   - RULE-SET,ai-openai,AI
   - RULE-SET,ai-claude,AI
   - RULE-SET,ai-gemini,AI
