@@ -1,3 +1,4 @@
-# Add every externally accessed Emby hostname here. They will use the Emby selector.
-# Example: DOMAIN-SUFFIX,emby.example.com
-payload: []
+# Every hostname here uses the Emby selector. Direct rules remain higher priority.
+payload:
+  - DOMAIN-SUFFIX,oceancloud.asia
+  - DOMAIN-SUFFIX,micu.hk
