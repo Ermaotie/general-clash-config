@@ -21,3 +21,7 @@ OpenClash 使用同一订阅链接添加订阅配置。规则更新后，客户�
 ## 自动部署
 
 推送到 `main` 时，GitHub Actions 会运行模板校验，然后部署 Cloudflare Worker。需要在仓库的 Actions secrets 中配置 `CLOUDFLARE_API_TOKEN`；不要添加 `ADMIN_TOKEN` 或 `CONFIG_KEY`，它们已作为 Worker secrets 单独保存。
+
+## 更换管理令牌
+
+管理令牌不存放在 GitHub，也不应通过管理网页修改。请在自己的终端中进入 `service` 目录后运行 `npx wrangler secret put ADMIN_TOKEN`，按提示输入一段至少 16 个字符的易记长口令。Worker secrets 更新后立即生效。
