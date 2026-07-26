@@ -12,6 +12,28 @@ dns:
   respect-rules: true
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
+  # Hosts that require a real address rather than a synthetic Fake-IP address.
+  fake-ip-filter:
+    # Home network and local hostnames.
+    - "*.lan"
+    - "*.local"
+    - "+.home.arpa"
+    - "router.asus.com"
+    # Time synchronisation and certificate validation.
+    - "time.*.com"
+    - "time.*.apple.com"
+    - "time.windows.com"
+    - "+.pool.ntp.org"
+    - "+.ntp.org.cn"
+    - "time1.cloud.tencent.com"
+    # Connectivity and captive portal checks.
+    - "msftconnecttest.com"
+    - "www.msftconnecttest.com"
+    - "www.msftncsi.com"
+    - "captive.apple.com"
+    # cloudflared requires real tunnel endpoint addresses; application hostnames stay on Fake-IP.
+    - "+.argotunnel.com"
+    - "+.cfargotunnel.com"
   default-nameserver:
     - 223.5.5.5
     - 119.29.29.29
@@ -127,6 +149,9 @@ rules:
   # LAN and personal rules always win.
   - GEOSITE,private,DIRECT
   - GEOIP,private,DIRECT,no-resolve
+  # Keep Cloudflare Tunnel's outbound connector off the proxy/TUN path.
+  - DOMAIN-SUFFIX,argotunnel.com,DIRECT
+  - DOMAIN-SUFFIX,cfargotunnel.com,DIRECT
   - RULE-SET,personal-direct,DIRECT
   - RULE-SET,personal-emby,Emby
   - RULE-SET,personal-proxy,Default Proxy
