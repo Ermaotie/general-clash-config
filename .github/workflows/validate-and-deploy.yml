@@ -14,7 +14,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node tests/validate-profile.mjs
-      - run: npx wrangler deploy
-        if: env.CLOUDFLARE_API_TOKEN != ''
+      - name: Validate profile template
+        id: validate
+        run: node tests/validate-profile.mjs
+      - name: Check deployment credential
+        id: credential
+        shell: bash
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare deployment credential is configured."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CLOUDFLARE_API_TOKEN is missing; validation passed but deployment will be skipped."
+          fi
+      - name: Deploy Cloudflare Worker
+        id: deploy_worker
+        if: steps.credential.outputs.available == 'true'
+        run: npx wrangler deploy
         working-directory: service
+      - name: Publish run summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## 订阅服务发布结果" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 配置验证：${{ steps.validate.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cloudflare 凭据：${{ steps.credential.outputs.available == 'true' && '已配置' || '缺少，已跳过部署' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Worker 部署：${{ steps.deploy_worker.outcome }}" >> "$GITHUB_STEP_SUMMARY"
