@@ -37,6 +37,70 @@ OpenClash 使用同一订阅链接添加订阅配置。规则更新后，客户�
 
 推送到 `main` 时，GitHub Actions 会运行模板校验，然后部署 Cloudflare Worker。需要在仓库的 Actions secrets 中配置 `CLOUDFLARE_API_TOKEN`；不要添加 `ADMIN_TOKEN` 或 `CONFIG_KEY`，它们已作为 Worker secrets 单独保存。
 
+## 部署步骤
+
+以下步骤用于部署当前仓库对应的 Worker。部署前请确认已安装 Node.js，并且终端能够使用 `npx`。
+
+### 1. 进入 Worker 目录并加载 Node 环境
+
+```zsh
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+cd "/你的项目目录/service"
+```
+
+### 2. 配置 Cloudflare 部署凭据
+
+在 Cloudflare 创建具有 Workers 与 D1 部署权限的 API Token，并将它作为 `CLOUDFLARE_API_TOKEN` 提供给当前终端。此项目中可从 macOS 钥匙串读取：
+
+```zsh
+export CLOUDFLARE_API_TOKEN="$(security find-generic-password -a "$USER" -s "cloudflare-api-token" -w)"
+```
+
+不要把令牌复制到 GitHub 文件、聊天记录或公开仓库。
+
+### 3. 初始化数据库
+
+首次部署时执行一次；重复执行是安全的：
+
+```zsh
+npx wrangler d1 execute general-clash-config --remote --file=schema.sql
+```
+
+### 4. 设置 Worker 密钥
+
+设置或更换管理令牌：
+
+```zsh
+npx wrangler secret put ADMIN_TOKEN
+```
+
+按提示输入至少 16 个字符的易记长口令。它用于登录 `/admin` 管理页，旧令牌会立即失效。
+
+`CONFIG_KEY` 用于加密 D1 内的订阅地址。当前服务已经存在该密钥，**不要重新设置或删除它**；否则已保存的订阅源将无法解密，需要重新录入。仅在全新、空白部署时才创建它：
+
+```zsh
+openssl rand -base64 32 | npx wrangler secret put CONFIG_KEY
+```
+
+### 5. 发布 Worker
+
+```zsh
+npx wrangler deploy
+```
+
+部署完成后打开 Worker 地址末尾的 `/admin`，输入管理令牌，添加自建或机场订阅源，并生成设备订阅链接。
+
+### 6. 开启 GitHub 自动部署
+
+进入 GitHub 仓库的 **Settings → Secrets and variables → Actions**，新增名称为 `CLOUDFLARE_API_TOKEN` 的 Repository Secret，并填入同一个 Cloudflare API Token。之后每次推送到 `main`：
+
+1. Actions 校验策略组和规则模板。
+2. 校验成功后部署 Worker。
+3. 客户端下次更新原有设备订阅时，自动获得最新规则。
+
+如果尚未添加该 Secret，Actions 仍会执行模板校验，但会跳过部署，不会影响已在运行的 Worker。
+
 ## 更换管理令牌
 
 管理令牌不存放在 GitHub，也不应通过管理网页修改。请在自己的终端中进入 `service` 目录后运行 `npx wrangler secret put ADMIN_TOKEN`，按提示输入一段至少 16 个字符的易记长口令。Worker secrets 更新后立即生效。
