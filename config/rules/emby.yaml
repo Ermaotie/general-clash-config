@@ -1,0 +1,3 @@
+# Add every externally accessed Emby hostname here. They will use the Emby selector.
+# Example: DOMAIN-SUFFIX,emby.example.com
+payload: []
