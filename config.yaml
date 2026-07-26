@@ -1,5 +1,5 @@
 # Portable Mihomo/OpenClash routing template.
-# Keep this repository free of subscription URLs, node credentials, and API tokens.
+# Do not put this file in a public repository: it contains a subscription URL.
 mixed-port: 7890
 ipv6: true
 allow-lan: true
@@ -19,6 +19,8 @@ dns:
     - https://dns.alidns.com/dns-query
     - https://dns.google/dns-query
 
+# This local profile currently uses only the self-hosted subscription.
+# Keep this file private: it contains the subscription URL.
 proxy-providers:
   self_hosted:
     type: http
@@ -26,7 +28,6 @@ proxy-providers:
     path: ./proxy_providers/self_hosted.yaml
     interval: 3600
     health-check: { enable: true, url: "https://www.gstatic.com/generate_204", interval: 600 }
-
 proxy-groups:
   - name: Automatic
     type: url-test
@@ -54,7 +55,7 @@ proxy-groups:
 rule-providers:
   ads:
     type: http
-    behavior: classical
+    behavior: domain
     format: yaml
     url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ads-all.yaml
     path: ./rule_providers/ads.yaml
@@ -89,20 +90,25 @@ rule-providers:
     interval: 86400
   media:
     type: http
-    behavior: classical
+    behavior: domain
     format: yaml
     url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-media.yaml
     path: ./rule_providers/media.yaml
     interval: 86400
 
 rules:
+  # LAN, private address space, and personal overrides always win.
+  # Add more personal rules in this block; keep a specific direct rule above
+  # an overlapping proxy suffix rule.
   - GEOSITE,private,DIRECT
   - GEOIP,private,DIRECT,no-resolve
   - DOMAIN,tv.micu.hk,DIRECT
   - DOMAIN-SUFFIX,oceancloud.asia,Default Proxy
   - DOMAIN-SUFFIX,micu.hk,Default Proxy
   - RULE-SET,ads,REJECT
-  # Add Emby hostnames here: DOMAIN-SUFFIX,emby.example.com,Emby
+
+  # Add Emby hostnames here in the form: DOMAIN-SUFFIX,emby.example.com,Emby
+  # Service-specific routes.
   - RULE-SET,ai-openai,AI
   - RULE-SET,ai-claude,AI
   - RULE-SET,ai-gemini,AI
@@ -110,6 +116,8 @@ rules:
   - RULE-SET,media,Media
   - GEOSITE,steam@cn,DIRECT
   - GEOSITE,steam,Default Proxy
+
+  # Mainland services remain direct; everything else is explicitly proxied.
   - GEOSITE,cn,DIRECT
   - GEOIP,CN,DIRECT,no-resolve
   - MATCH,Default Proxy
