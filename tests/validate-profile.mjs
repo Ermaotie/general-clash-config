@@ -51,7 +51,7 @@ for (const path of ['service/src/index.js', 'service/src/snapshot.js', 'service/
   assert.ok(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').length > 0, `Missing ${path}`)
 }
 const worker = readFileSync(new URL('../service/src/index.js', import.meta.url), 'utf8')
-for (const token of ['providers', 'clipboard.writeText', 'clash://install-config', 'shadowrocket://add/', 'stash://', '已生成设备', 'token_encrypted', '/api/manage/devices', 'DELETE', 'position:fixed', 'replaceChildren']) {
+for (const token of ['providers', 'clipboard.writeText', 'clash://install-config', 'shadowrocket://add/', 'stash://', '已生成设备', 'token_encrypted', '/api/manage/devices', 'DELETE', 'position:fixed', 'replaceChildren', 'device-card', '复制订阅链接']) {
   assert.match(worker, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `Missing UI support: ${token}`)
 }
 assert.match(worker, /cache-control': 'no-store'/, 'Management page and device list must not be served from a stale cache')
