@@ -29,7 +29,7 @@ proxy-groups:
   - name: Automatic
     type: url-test
     proxies:
-      __SELF_HOSTED_PROXY_NAMES__
+      __SELF_HOSTED_NODE_NAMES__
     url: https://www.gstatic.com/generate_204
     interval: 600
     tolerance: 50
