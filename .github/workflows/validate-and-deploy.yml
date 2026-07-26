@@ -64,4 +64,10 @@ jobs:
           echo "- 配置验证：${{ steps.validate.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Cloudflare 凭据：${{ steps.credential.outputs.available == 'true' && '已配置' || '缺少，已跳过部署' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Worker 部署：${{ steps.deploy_worker.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 静态快照刷新：${{ steps.refresh_credential.outputs.available == 'true' && steps.refresh_snapshot.outcome || '缺少 MY_SUB_REFRESH_TOKEN，已跳过（定时刷新仍可用）' }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.deploy_worker.outcome }}" != "success" ]; then
+            echo "- 静态快照刷新：未执行（Worker 部署失败）" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ steps.refresh_credential.outputs.available }}" = "true" ]; then
+            echo "- 静态快照刷新：${{ steps.refresh_snapshot.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- 静态快照刷新：缺少 MY_SUB_REFRESH_TOKEN，已跳过（定时刷新仍可用）" >> "$GITHUB_STEP_SUMMARY"
+          fi
