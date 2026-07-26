@@ -109,14 +109,15 @@ function page() { return `<!doctype html><html lang="zh-CN"><meta charset="utf-8
 
 function pageWithDevices() {
   const manager = `<style>#device-manager .device-row{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;padding:12px 0;border-top:1px solid #eef2f7}#device-manager .device-row:first-child{border-top:0}@media(max-width:640px){#device-manager .device-row{grid-template-columns:1fr}#device-manager input{min-width:0}}</style><section id="device-manager" class="card"><div class="heading"><div><h2>已生成设备</h2><p>可复制、查看或撤销新生成的设备订阅。</p></div><button onclick="loadDevices()">刷新列表</button></div><div id="device-list" class="hint">输入管理令牌后点击“读取订阅源”加载。</div></section><script>let managedDevices=[];const deviceEsc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&#39;'}[c]));async function loadDevices(){const r=await fetch('/api/manage/devices',{headers:headers()});if(!r.ok)return msg('读取设备失败：请检查管理令牌','error');managedDevices=(await r.json()).devices;const list=$('device-list');list.innerHTML=managedDevices.map(d=>'<div class="device-row"><div><b>'+deviceEsc(d.name)+'</b><br><span class="hint">'+(d.revokedAt?'已撤销':d.legacy?'旧设备':'正常')+'</span></div>'+(d.subscription?'<input readonly value="'+deviceEsc(d.subscription)+'">':'<span class="hint">'+(d.legacy?'旧链接无法恢复，请新建替换。':'已撤销')+'</span>')+'<div class="row">'+(d.subscription?'<button onclick="copyManagedDevice(\''+d.id+'\')">复制</button>':'')+(d.revokedAt?'':'<button class="danger" onclick="revokeManagedDevice(\''+d.id+'\')">撤销</button>')+'</div></div>').join('')||'<p class="hint">尚未生成设备订阅。</p>'}async function copyManagedDevice(id){const d=managedDevices.find(v=>v.id===id);if(!d?.subscription)return;await navigator.clipboard.writeText(d.subscription);msg('设备订阅已复制','success')}async function revokeManagedDevice(id){if(!confirm('撤销后该设备订阅将立即失效，确定继续吗？'))return;const r=await fetch('/api/manage/devices/'+id,{method:'DELETE',headers:headers()});if(!r.ok)return msg('撤销失败：请检查管理令牌','error');await loadDevices();msg('设备订阅已撤销','success')}const previousLoadSettings=window.loadSettings;window.loadSettings=async()=>{await previousLoadSettings();await loadDevices()};const previousCreateDevice=window.createDevice;window.createDevice=async()=>{await previousCreateDevice();await loadDevices()}</script>`
-  return page().replace('<div id="message"', `${manager}<div id="message"`)
+  const toast = '<style>#message{position:fixed;right:20px;bottom:20px;z-index:10;max-width:min(420px,calc(100vw - 40px));margin:0;box-shadow:0 14px 36px #16335b33}@media(max-width:640px){#message{right:14px;bottom:14px;max-width:calc(100vw - 28px)}}</style>'
+  return page().replace('<div id="message"', `${toast}${manager}<div id="message"`)
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
     if (url.pathname === '/__scheduled') return new Response('Not found', { status: 404 })
-    if (url.pathname === '/admin') return new Response(pageWithDevices(), { headers: { 'content-type': 'text/html;charset=utf-8' } })
+    if (url.pathname === '/admin') return new Response(pageWithDevices(), { headers: { 'content-type': 'text/html;charset=utf-8', 'cache-control': 'no-store' } })
     if (url.pathname === '/api/settings' && request.method === 'GET') {
       if (!authorized(request, env)) return new Response('Unauthorized', { status: 401 })
       return Response.json((await settings(env)) || { providers: [] })
@@ -143,7 +144,7 @@ export default {
     }
     if (url.pathname === '/api/manage/devices' && request.method === 'GET') {
       if (!authorized(request, env)) return new Response('Unauthorized', { status: 401 })
-      return Response.json({ devices: await devices(env, url.origin) })
+      return Response.json({ devices: await devices(env, url.origin) }, { headers: { 'cache-control': 'no-store' } })
     }
     if (url.pathname === '/api/devices' && request.method === 'POST') {
       if (!authorized(request, env)) return new Response('Unauthorized', { status: 401 })
