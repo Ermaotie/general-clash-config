@@ -1,5 +1,5 @@
 # Portable Mihomo/OpenClash routing template.
-# Do not put this file in a public repository: it contains a subscription URL.
+# Private nodes are injected into a Cloudflare R2 snapshot, never committed here.
 mixed-port: 7890
 ipv6: true
 allow-lan: true
@@ -22,44 +22,37 @@ dns:
     - https://dns.google/dns-query
     - https://cloudflare-dns.com/dns-query
 
-# Subscription URLs are injected privately by the Worker at request time.
-proxy-providers:
-  __SELF_HOSTED_PROVIDERS__
-  __AIRPORT_PROVIDERS__
+# Real proxy definitions are injected privately while refreshing the static snapshot.
+proxies:
+  __PROXIES__
 proxy-groups:
   - name: Automatic
     type: url-test
-    use:
-      __SELF_HOSTED_USES__
+    proxies:
+      __SELF_HOSTED_PROXY_NAMES__
     url: https://www.gstatic.com/generate_204
     interval: 600
     tolerance: 50
   - name: Manual
     type: select
-    proxies: [Automatic, DIRECT, REJECT]
-    use:
-      __SELF_HOSTED_USES__
-    __AIRPORT_USES__
+    proxies:
+      __ALL_PROXY_NAMES__
   - name: Default Proxy
     type: select
-    proxies: [Automatic, Manual, DIRECT, REJECT]
-    use:
-      __SELF_HOSTED_USES__
+    proxies:
+      __SELF_HOSTED_PROXY_NAMES__
   - name: AI
     type: select
-    proxies: [Automatic, Manual, DIRECT, REJECT]
-    use:
-      __SELF_HOSTED_USES__
+    proxies:
+      __SELF_HOSTED_PROXY_NAMES__
   - name: Media
     type: select
-    proxies: [Automatic, Manual, DIRECT, REJECT]
-    use:
-      __SELF_HOSTED_USES__
+    proxies:
+      __SELF_HOSTED_PROXY_NAMES__
   - name: Emby
     type: select
-    proxies: [Automatic, Manual, DIRECT, REJECT]
-    use:
-      __SELF_HOSTED_USES__
+    proxies:
+      __SELF_HOSTED_PROXY_NAMES__
 
 rule-providers:
   ads:
