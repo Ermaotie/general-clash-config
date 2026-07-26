@@ -46,6 +46,7 @@ export function renderSnapshot(template, sources) {
   const profile = template
     .replace(/^\s*__PROXIES__\s*$/m, yamlList(proxies, 2))
     .replace(/^\s*__ALL_PROXY_NAMES__\s*$/m, yamlList(manual, 6))
+    .replace(/^\s*__SELF_HOSTED_NODE_NAMES__\s*$/m, yamlList(selfHostedNames, 6))
     .replaceAll(/^\s*__SELF_HOSTED_PROXY_NAMES__\s*$/gm, yamlList(selfHosted, 6))
   if (profile.includes('__')) throw new Error('静态模板缺少节点占位符')
   try {

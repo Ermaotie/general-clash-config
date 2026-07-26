@@ -7,7 +7,7 @@ proxy-groups:
   - name: Automatic
     type: url-test
     proxies:
-      __SELF_HOSTED_PROXY_NAMES__
+      __SELF_HOSTED_NODE_NAMES__
   - name: Manual
     type: select
     proxies:
@@ -47,6 +47,10 @@ assert.match(profile, /name: .*SelfNode.*HK/, 'Self-hosted nodes must use the Se
 assert.match(profile, /name: .*Airport.*HK/, 'Airport nodes must use their configured prefix')
 const manual = profile.match(/- name: Manual[\s\S]*?(?=\n  - name:|$)/)?.[0] || ''
 for (const name of ['SelfNode', 'Airport', 'Automatic', 'DIRECT', 'REJECT']) assert.match(manual, new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `Manual must include ${name}`)
+const automatic = profile.match(/- name: Automatic[\s\S]*?(?=\n  - name:|$)/)?.[0] || ''
+assert.match(automatic, /SelfNode/, 'Automatic must include self-hosted nodes')
+const automaticCandidates = automatic.slice(automatic.indexOf('proxies:') + 'proxies:'.length)
+assert.doesNotMatch(automaticCandidates, /Manual|DIRECT|REJECT|Automatic/, 'Automatic must not reference selector groups or itself')
 for (const group of ['Default Proxy', 'AI', 'Media', 'Emby']) {
   const block = profile.match(new RegExp(`- name: ${group.replace(' ', '\\s+')}[\\s\\S]*?(?=\\n  - name:|$)`))?.[0] || ''
   assert.match(block, /SelfNode/, `${group} must include self-hosted nodes`)
