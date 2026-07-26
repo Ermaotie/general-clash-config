@@ -1,8 +1,12 @@
 {
   "private": true,
+  "type": "module",
   "scripts": {
-    "test": "node ../tests/validate-profile.mjs",
+    "test": "node ../tests/snapshot.mjs && node ../tests/validate-profile.mjs",
     "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

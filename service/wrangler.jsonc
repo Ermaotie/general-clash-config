@@ -2,5 +2,7 @@
   "name": "general-clash-config",
   "main": "src/index.js",
   "compatibility_date": "2026-07-26",
-  "d1_databases": [{ "binding": "DB", "database_name": "general-clash-config", "database_id": "4c5cec5e-df2a-42ff-b386-f02d95ba7b6a" }]
+  "d1_databases": [{ "binding": "DB", "database_name": "general-clash-config", "database_id": "4c5cec5e-df2a-42ff-b386-f02d95ba7b6a" }],
+  "r2_buckets": [{ "binding": "SNAPSHOTS", "bucket_name": "general-clash-config-snapshots" }],
+  "triggers": { "crons": ["*/30 * * * *"] }
 }
