@@ -81,7 +81,7 @@ const workflow = readFileSync(new URL('../.github/workflows/validate-and-deploy.
 assert.match(workflow, /node tests\/validate-profile\.mjs/, 'Workflow must validate the template')
 assert.match(workflow, /node tests\/snapshot\.mjs/, 'Workflow must validate static snapshot rendering')
 assert.match(workflow, /Render static profile for Mihomo/, 'Workflow must render a complete static profile before kernel validation')
-assert.match(workflow, /install_mihomo\.outputs\.path \}\} -t -f/, 'Workflow must ask the Mihomo kernel to validate the rendered profile')
+assert.match(workflow, /install_mihomo\.outputs\.path \}\} -d .* -t -f/, 'Workflow must ask the Mihomo kernel to validate the rendered profile')
 assert.match(workflow, /Mihomo kernel validation/, 'Workflow must publish Mihomo validation in the run summary')
 assert.match(workflow, /GeoSite\\.dat/, 'Workflow must provision geodata needed by GEOSITE rules')
 assert.match(workflow, /GeoLite2-ASN\\.mmdb/, 'Workflow must provision ASN data needed by AI rules')
