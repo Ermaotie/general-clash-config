@@ -1,0 +1,5 @@
+# Rules in this list always bypass the proxy. This list is evaluated before
+# config/rules/proxy.yaml, so a more specific direct rule can override a suffix
+# that is otherwise sent to the proxy.
+payload:
+  - DOMAIN,tv.micu.hk
