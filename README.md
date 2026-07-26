@@ -1,137 +1,122 @@
-# General Clash Config
+# General Clash Config / MySub
 
-这是一个用于 Mihomo、OpenClash、Clash Verge、Stash 与 Shadowrocket 的私有订阅服务。
+面向 Mihomo、OpenClash、Clash Verge、Stash 与 Shadowrocket 的私有 Clash 订阅服务。
 
-设备订阅读取的是 Cloudflare R2 中预先生成的完整 YAML 快照：设备更新时不会再访问 GitHub 或你的上游订阅地址。这样更适合路由器和多设备长期使用。
+MySub 将公开模板、个人规则和私有订阅源在 Cloudflare Worker 中合成为一份完整 YAML，再保存到私有 R2 快照。设备仅下载这一份设备订阅，不会在更新时访问 GitHub、机场或自建订阅地址。
 
-## 安全边界
+## 安全与更新模型
 
-本仓库只保存公开模板、Worker 源码、测试与自动部署流程。真实订阅地址、管理令牌、加密密钥和设备订阅链接只保存在 Cloudflare，不会提交到 GitHub。
+- GitHub 仅保存模板、规则、Worker 源码、测试和部署流程；不会保存真实订阅地址、设备链接、管理令牌或密钥。
+- 自建和机场订阅地址以加密形式保存在 D1。
+- 快照每 30 分钟自动刷新；管理页保存来源/手动刷新，以及 GitHub Actions 发布成功后，也可立即刷新。
+- 上游订阅或规则源临时不可用时，继续分发上一次成功快照。
+- 设备订阅响应声明 `profile-update-interval: 24`，客户端按一天更新一次；自建订阅若提供 `subscription-userinfo`，其流量信息会透传到设备端。
+- 广告、AI、影视与个人规则在 Worker 刷新时预加载并内联写入快照；设备配置中没有动态 `rule-providers` 或私有 `proxy-providers`。
 
 ## 策略组
 
-- `Manual`：全部自建与机场节点、自动测速、DIRECT、BLOCK。
-- `Default Proxy`、`AI`、`Media`、`Emby`：自建节点、自动测速、Manual、DIRECT、BLOCK。
-- `BLOCK` 使用 Mihomo 的 `REJECT`。
+| 策略组 | 候选项 |
+| --- | --- |
+| `Automatic` | 仅自建节点，使用 Cloudflare 测速地址自动测速 |
+| `Manual` | 全部自建与机场节点、Automatic、DIRECT、REJECT |
+| `Default Proxy`、`AI`、`Media`、`Emby` | 自建节点、Automatic、Manual、DIRECT、REJECT |
 
-## 管理与使用
+其中 `REJECT` 即阻断选项。机场节点只放在 `Manual`，不会进入日常业务策略组。所有未匹配流量默认进入可切换的 `Default Proxy`。
 
-打开 Worker 的 `/admin` 页面，输入管理令牌后添加订阅源。每个来源选择“自建”或“机场”；至少需保留一个自建来源。保存来源会立即生成静态快照；也可以点击“立即刷新”。生成设备订阅后，可复制链接、直接导入 Clash Verge 或 Shadowrocket。Stash 会复制链接并打开应用，请在 Stash 内粘贴导入。
+## DNS 与 IPv6
 
-“已生成设备”区域可查看新建设备、复制订阅链接和撤销不再使用的设备。为防止链接泄露，历史设备只保存了不可逆校验值，无法重新显示其原始链接；需要时请新建设备、在客户端替换链接后撤销旧设备。
+- IPv6 已开启，适合 IPv6 可用的 Emby/自建节点。
+- 节点域名优先使用阿里与腾讯 DNS 解析，减少节点域名解析失败。
+- Automatic 使用 `https://cp.cloudflare.com/generate_204` 测速，更适合 IPv6 节点。
+- 仅有 AAAA 记录的节点可使用，但在没有可用 IPv6 的网络中不会连通；建议保留 IPv4 节点作为备用。
 
-每个订阅源都可填写“节点前缀”。该来源的节点会显示为 `[前缀] 节点名`；留空时，自建来源使用 `SelfNode`，机场来源使用 `Airport`。
+## 个人规则与优先级
 
-OpenClash 使用同一订阅链接添加订阅配置。规则更新后，静态快照由以下任一方式更新：管理页保存/手动刷新、每 30 分钟的 Worker 定时任务，或 GitHub Actions 发布完成后的受保护刷新请求。设备链接、设备名称和下载文件名不会变化。
+规则按从上到下、首次命中生效：
 
-如果某次刷新失败，服务会保留并继续分发最后一次成功的快照；管理页会显示最近错误。快照 bucket 没有公共域名，不能绕过设备令牌直接访问。
-
-## 个人规则优先级
-
-规则从上到下匹配，第一条命中的规则立即生效。个人规则的顺序固定为：
-
-1. 私有地址与局域网直连。
+1. 局域网与私有地址直连。
 2. `config/rules/direct.yaml`：强制直连。
-3. `config/rules/proxy.yaml`：强制走 `Default Proxy`。
-4. 广告拦截。
-5. `config/rules/emby.yaml`：进入 `Emby` 策略组。
-6. AI、影视、Steam、国内直连与最终默认代理。
+3. `config/rules/emby.yaml`：进入 `Emby` 策略组。
+4. `config/rules/proxy.yaml`：进入 `Default Proxy`。
+5. 广告拦截、AI、影视、Steam、国内直连与默认代理。
 
-因此，当规则有重叠时，`direct.yaml` 会优先于 `proxy.yaml`。例如 `tv.micu.hk` 放在 `direct.yaml`，而 `DOMAIN-SUFFIX,micu.hk` 放在 `proxy.yaml` 时，`tv.micu.hk` 仍会直连，其他 `micu.hk` 子域名走默认代理。
+因此直连规则始终优先于 Emby 和代理规则；Emby 规则优先于广义代理规则。当前示例中：
 
-在同一个个人规则文件中，也应把更精确的规则写在前面。例如先写 `DOMAIN,api.example.com`，再写 `DOMAIN-SUFFIX,example.com`。修改后提交 GitHub，客户端下次更新订阅即可应用。
+- `tv.micu.hk` 直连；
+- `oceancloud.asia`、`micu.hk` 进入 Emby 组。
 
-## 自动部署
+在同一文件中也应先放精确规则，再放域名后缀规则。修改 `config/rules/*.yaml` 后提交到 `main`，快照刷新后设备即可获得新规则。
 
-推送到 `main` 时，GitHub Actions 会运行模板校验，然后部署 Cloudflare Worker。需要在仓库的 Actions secrets 中配置 `CLOUDFLARE_API_TOKEN`；不要添加 `ADMIN_TOKEN` 或 `CONFIG_KEY`，它们已作为 Worker secrets 单独保存。
+## 管理页与设备订阅
 
-## 部署步骤
+打开 Worker 地址后的 `/admin`，输入 `ADMIN_TOKEN` 后：
 
-以下步骤用于部署当前仓库对应的 Worker。部署前请确认已安装 Node.js，并且终端能够使用 `npx`。
+1. 添加订阅来源，选择“自建”或“机场”，并可自定义节点前缀。前缀留空时自建为 `SelfNode`，机场为 `Airport`。
+2. 点击“保存并刷新”生成快照。
+3. 输入英文设备名称生成订阅；可复制链接或直接导入 Clash Verge、Shadowrocket、Stash。
 
-### 1. 进入 Worker 目录并加载 Node 环境
+设备列表采用卡片视图，仅显示有效设备：
+
+- 新设备可复制订阅链接或撤销；链接不会直接展示在页面上。
+- 已撤销设备会隐藏，撤销后原链接立即失效。
+- 早期旧设备只保存不可逆校验值，因此可显示名称和撤销，但无法恢复旧链接；请新建设备后替换客户端链接。
+- 点击“读取订阅源”后，设备列表会自动刷新。
+
+## GitHub Actions 自动部署
+
+推送到 `main` 会运行配置校验、D1 迁移、Worker 部署，并在设置刷新令牌时刷新静态快照。
+
+在仓库 **Settings → Secrets and variables → Actions** 配置：
+
+| Secret | 必需 | 用途 |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | 是 | D1 迁移与 Worker 部署 |
+| `MY_SUB_REFRESH_TOKEN` | 可选 | 发布后立即刷新快照 |
+
+Action 摘要会准确显示配置校验、部署与快照刷新状态：Worker 部署失败时，刷新会显示“未执行（Worker 部署失败）”，不会误报为缺少刷新令牌。
+
+Cloudflare API Token 需要覆盖此项目的 Workers Scripts、D1 与 R2 权限。令牌更新后，也要同步更新 GitHub 的 `CLOUDFLARE_API_TOKEN` Secret。
+
+## 本地部署与维护
+
+需要 Node.js 与 `npx`。使用 NVM 时：
 
 ```zsh
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 cd "/你的项目目录/service"
-```
-
-然后安装 Worker 依赖：
-
-```zsh
 npm ci
 ```
 
-### 2. 配置 Cloudflare 部署凭据
-
-在 Cloudflare 创建具有 Workers 与 D1 部署权限的 API Token，并将它作为 `CLOUDFLARE_API_TOKEN` 提供给当前终端。此项目中可从 macOS 钥匙串读取：
+将 Cloudflare 令牌提供给当前终端后，可执行：
 
 ```zsh
 export CLOUDFLARE_API_TOKEN="$(security find-generic-password -a "$USER" -s "cloudflare-api-token" -w)"
+npx wrangler d1 migrations apply general-clash-config --remote
+npx wrangler deploy
 ```
 
-不要把令牌复制到 GitHub 文件、聊天记录或公开仓库。
+首次全新部署还需创建 D1 表与私有 R2 bucket；不要为快照 bucket 配置公共访问。
 
-### 3. 初始化数据库与私有快照存储
-
-首次部署时执行一次；重复执行是安全的：
-
-```zsh
-npx wrangler d1 execute general-clash-config --remote --file=schema.sql
-npx wrangler r2 bucket create general-clash-config-snapshots
-```
-
-如果 bucket 已存在，第二条命令会提示已存在，可安全跳过；它不应配置公共访问或自定义域名。
-
-### 4. 设置 Worker 密钥
-
-设置或更换管理令牌：
+管理令牌与刷新令牌使用 Worker Secret 保存：
 
 ```zsh
 npx wrangler secret put ADMIN_TOKEN
+npx wrangler secret put REFRESH_TOKEN
 ```
 
-按提示输入至少 16 个字符的易记长口令。它用于登录 `/admin` 管理页，旧令牌会立即失效。
-
-`CONFIG_KEY` 用于加密 D1 内的订阅地址。当前服务已经存在该密钥，**不要重新设置或删除它**；否则已保存的订阅源将无法解密，需要重新录入。仅在全新、空白部署时才创建它：
+`CONFIG_KEY` 用于解密已保存的订阅来源。现有服务不要重设或删除它；仅在全新空白部署时创建。
 
 ```zsh
 openssl rand -base64 32 | npx wrangler secret put CONFIG_KEY
 ```
 
-### 5. 发布 Worker
+## 常见问题
 
-```zsh
-npx wrangler deploy
-```
+**设备导入提示策略组循环**：更新订阅即可。当前 Automatic 只包含自建节点，不引用 Manual 或自身。
 
-部署完成后打开 Worker 地址末尾的 `/admin`，输入管理令牌，添加自建或机场订阅源，并生成设备订阅链接。
+**节点域名解析失败**：确认客户端 IPv6 与 DNS 可用；模板已为节点解析配置国内 DNS。
 
-首次完成来源填写后，点击“保存并刷新”或“立即刷新”生成第一份快照。在快照生成前，设备订阅会提示尚未就绪；这是为了保证设备端绝不会回退到动态拉取。
+**GitHub Actions 部署失败**：先查看 Action 摘要。若提示 Cloudflare access token 无效，请更新仓库 Secret `CLOUDFLARE_API_TOKEN`；不要把令牌提交到仓库或发送到聊天中。
 
-### 6. 开启 GitHub 自动部署
-
-进入 GitHub 仓库的 **Settings → Secrets and variables → Actions**，新增名称为 `CLOUDFLARE_API_TOKEN` 的 Repository Secret，并填入同一个 Cloudflare API Token。之后每次推送到 `main`：
-
-1. Actions 校验策略组和规则模板。
-2. 校验成功后部署 Worker。
-3. 客户端下次更新原有设备订阅时，自动获得最新规则。
-
-如果尚未添加该 Secret，Actions 仍会执行模板校验，但会跳过部署，不会影响已在运行的 Worker。
-
-### 7. 可选：规则发布后立即刷新快照
-
-默认的 30 分钟定时刷新已经足够。若希望 GitHub 规则提交并部署成功后立刻刷新，在 Worker 和 GitHub Actions 中设置同一段独立口令：
-
-```zsh
-npx wrangler secret put REFRESH_TOKEN
-```
-
-然后在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 新增 `MY_SUB_REFRESH_TOKEN`，填入相同口令。它仅允许触发刷新，不能读取管理设置或设备订阅；不要复用 `ADMIN_TOKEN`。
-
-Action 摘要会明确显示静态快照是已刷新，还是因为缺少该可选密钥而跳过。
-
-## 更换管理令牌
-
-管理令牌不存放在 GitHub，也不应通过管理网页修改。请在自己的终端中进入 `service` 目录后运行 `npx wrangler secret put ADMIN_TOKEN`，按提示输入一段至少 16 个字符的易记长口令。Worker secrets 更新后立即生效。
+**看不到旧设备订阅链接**：这是安全设计。旧记录不能从哈希恢复，请新建设备并替换链接。
