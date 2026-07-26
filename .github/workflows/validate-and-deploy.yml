@@ -35,7 +35,7 @@ jobs:
       - name: Deploy Cloudflare Worker
         id: deploy_worker
         if: steps.credential.outputs.available == 'true'
-        run: npx wrangler deploy
+        run: npx wrangler d1 migrations apply general-clash-config --remote && npx wrangler deploy
         working-directory: service
       - name: Check snapshot refresh credential
         id: refresh_credential
