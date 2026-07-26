@@ -42,6 +42,7 @@ const airport = {
 assert.deepEqual(parseSubscription(selfHosted.yaml).map(proxy => proxy.name), ['HK'], 'Clash YAML subscriptions must expose their nodes')
 assert.throws(() => parseSubscription('proxies: invalid'), /proxies/, 'Invalid subscriptions must be rejected before snapshots are overwritten')
 assert.deepEqual(parseRuleProvider('payload:\n  - DOMAIN,example.com'), ['DOMAIN,example.com'], 'Rule provider payloads must be parsed before snapshotting')
+assert.deepEqual(parseRuleProvider('payload: []'), [], 'Empty optional rule providers must not block a snapshot')
 
 const profile = renderSnapshot(template, [selfHosted, airport])
 assert.match(profile, /name: .*SelfNode.*HK/, 'Self-hosted nodes must use the SelfNode fallback prefix')
@@ -68,5 +69,6 @@ rules:
 assert.doesNotMatch(fullyStatic, /rule-providers:/, 'Static profiles must not retain dynamic rule providers')
 assert.match(fullyStatic, /DOMAIN-SUFFIX,example\.cn,DIRECT/, 'Provider rules must be expanded inline')
 assert.match(fullyStatic, /MATCH,Default Proxy/, 'Non-provider rules must be retained')
+assert.doesNotMatch(inlineRuleProviders('rule-providers:\n  optional:\n    type: http\nrules:\n  - RULE-SET,optional,Emby\n', { optional: [] }), /RULE-SET/, 'Empty optional providers must be safely omitted')
 
 console.log('Snapshot rendering passed')

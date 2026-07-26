@@ -58,7 +58,7 @@ export function inlineRuleProviders(profile, providerRules) {
       continue
     }
     const payload = providerRules[match[1]]
-    if (!Array.isArray(payload) || payload.length === 0) throw new Error(`规则集「${match[1]}」为空或格式无效`)
+    if (!Array.isArray(payload)) throw new Error(`规则集「${match[1]}」格式无效`)
     rules.push(...payload.map(rule => `${String(rule).trim()},${match[2]}`))
   }
   parsed.rules = rules
