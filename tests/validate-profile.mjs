@@ -49,6 +49,12 @@ for (const token of ['providers', 'clipboard.writeText', 'clash://install-config
 }
 assert.match(worker, /MySub-/, 'Device subscriptions must have a friendly filename prefix')
 assert.match(worker, /SELECT id,name FROM devices/, 'Subscription filename must use the device name')
+for (const token of ['prefix', 'SelfNode', 'Airport', 'additional-prefix']) {
+  assert.match(worker, new RegExp(token), `Missing provider prefix support: ${token}`)
+}
+for (const token of ['workspace-shell', '管理会话', 'subscription-card', 'status-message', '节点前缀']) {
+  assert.match(worker, new RegExp(token), `Missing workspace UI element: ${token}`)
+}
 const workflow = readFileSync(new URL('../.github/workflows/validate-and-deploy.yml', import.meta.url), 'utf8')
 assert.match(workflow, /node tests\/validate-profile\.mjs/, 'Workflow must validate the template')
 assert.match(workflow, /wrangler deploy/, 'Workflow must deploy the Worker')
