@@ -51,5 +51,9 @@ const workflow = readFileSync(new URL('../.github/workflows/validate-and-deploy.
 assert.match(workflow, /node tests\/validate-profile\.mjs/, 'Workflow must validate the template')
 assert.match(workflow, /wrangler deploy/, 'Workflow must deploy the Worker')
 assert.doesNotMatch(workflow, /ADMIN_TOKEN|CONFIG_KEY/, 'Workflow must not expose worker secrets')
+assert.doesNotMatch(workflow, /if:\s*\$\{\{\s*secrets\./, 'GitHub Actions cannot access secrets directly in a step condition')
+for (const label of ['Validate profile template', 'Check deployment credential', 'Publish run summary', 'GITHUB_STEP_SUMMARY']) {
+  assert.match(workflow, new RegExp(label), `Workflow must report ${label}`)
+}
 
 console.log('Profile template validation passed')
