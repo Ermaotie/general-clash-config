@@ -71,6 +71,19 @@ async function fetchText(url, label) {
     clearTimeout(timer)
   }
 }
+async function fetchSubscription(url, label) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 20_000)
+  try {
+    const response = await fetch(url, { signal: controller.signal, headers: { 'user-agent': 'MySub static snapshot refresher' } })
+    if (!response.ok) throw new Error(`${label} 返回 ${response.status}`)
+    return { body: await response.text(), userInfo: response.headers.get('subscription-userinfo') || '' }
+  } catch (error) {
+    throw new Error(`${label} 无法读取：${safeError(error)}`)
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 export async function refreshSnapshot(env, configuredSettings) {
   const attemptedAt = new Date().toISOString()
@@ -80,9 +93,9 @@ export async function refreshSnapshot(env, configuredSettings) {
     if (!current?.providers?.length) throw new Error('尚未配置订阅源')
     const [template, ...subscriptions] = await Promise.all([
       fetchText(TEMPLATE_URL, '规则模板'),
-      ...current.providers.map(source => fetchText(source.url, `订阅源「${source.name}」`))
+      ...current.providers.map(source => fetchSubscription(source.url, `订阅源「${source.name}」`))
     ])
-    const sources = current.providers.map((source, index) => ({ ...source, yaml: subscriptions[index] }))
+    const sources = current.providers.map((source, index) => ({ ...source, yaml: subscriptions[index].body }))
     const dynamicProfile = renderSnapshot(template, sources)
     const ruleProviders = parse(dynamicProfile)?.['rule-providers'] || {}
     const providerEntries = Object.entries(ruleProviders)
@@ -93,7 +106,9 @@ export async function refreshSnapshot(env, configuredSettings) {
     const providerRules = Object.fromEntries(providerEntries.map(([name], index) => [name, parseRuleProvider(providerBodies[index])]))
     const profile = inlineRuleProviders(dynamicProfile, providerRules)
     const nodeCount = sources.reduce((total, source) => total + parseSubscription(source.yaml).length, 0)
-    await env.SNAPSHOTS.put(SNAPSHOT_KEY, profile, { httpMetadata: { contentType: 'text/yaml; charset=utf-8' } })
+    const selfHosted = current.providers.find((source, index) => source.kind === 'self-hosted' && subscriptions[index].userInfo)
+    const userInfo = selfHosted ? subscriptions[current.providers.indexOf(selfHosted)].userInfo : ''
+    await env.SNAPSHOTS.put(SNAPSHOT_KEY, profile, { httpMetadata: { contentType: 'text/yaml; charset=utf-8' }, customMetadata: userInfo ? { subscriptionUserInfo: userInfo } : {} })
     const state = { status: 'ready', updatedAt: new Date().toISOString(), attemptedAt, nodeCount, lastError: null }
     await putSnapshotState(env, state)
     return { ok: true, ...state }
@@ -166,7 +181,9 @@ export default {
       if (!device) return new Response('Not found', { status: 404 })
       const profile = await env.SNAPSHOTS.get(SNAPSHOT_KEY)
       if (!profile) return new Response('Subscription snapshot not ready; refresh it from /admin first', { status: 503 })
-      return new Response(profile.body, { headers: { 'content-type': 'text/yaml;charset=utf-8', 'cache-control': 'private, max-age=300', 'content-disposition': `attachment; filename=${profileFilename(device.name)}`, 'profile-update-interval': '24' } })
+      const headers = { 'content-type': 'text/yaml;charset=utf-8', 'cache-control': 'private, max-age=300', 'content-disposition': `attachment; filename=${profileFilename(device.name)}`, 'profile-update-interval': '24' }
+      if (profile.customMetadata?.subscriptionUserInfo) headers['subscription-userinfo'] = profile.customMetadata.subscriptionUserInfo
+      return new Response(profile.body, { headers })
     }
     return new Response('Not found', { status: 404 })
   },

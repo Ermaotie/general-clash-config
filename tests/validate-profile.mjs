@@ -70,6 +70,9 @@ for (const token of ['workspace-shell', '管理会话', '静态订阅快照', 's
 for (const token of ['refreshSnapshot', 'SNAPSHOTS', '/api/refresh', '/api/status', 'scheduled']) {
   assert.match(worker, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `Missing static snapshot support: ${token}`)
 }
+for (const token of ['profile-update-interval', 'subscription-userinfo', 'customMetadata']) {
+  assert.match(worker, new RegExp(token), `Subscription responses must preserve ${token}`)
+}
 const wrangler = readFileSync(new URL('../service/wrangler.jsonc', import.meta.url), 'utf8')
 assert.match(wrangler, /r2_buckets/, 'Worker must bind its private snapshot bucket')
 assert.match(wrangler, /\*\/30 \* \* \* \*/, 'Worker must refresh static snapshots every 30 minutes')
