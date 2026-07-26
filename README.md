@@ -1,24 +1,23 @@
 # General Clash Config
 
-A portable Mihomo/OpenClash routing template.
+这是一个用于 Mihomo、OpenClash、Clash Verge、Stash 与 Shadowrocket 的私有订阅服务。
 
-## Included routing
+## 安全边界
 
-- IPv6 enabled
-- AI selectors for OpenAI, Claude, Gemini, and Copilot
-- Media selector
-- Emby selector
-- Mainland Steam content direct; other Steam traffic through the default proxy
-- China and private networks direct
-- All unmatched traffic enters the selectable `Default Proxy` group
-- Custom rules: `tv.micu.hk` direct; `oceancloud.asia` and `micu.hk` through the default proxy
+本仓库只保存公开模板、Worker 源码、测试与自动部署流程。真实订阅地址、管理令牌、加密密钥和设备订阅链接只保存在 Cloudflare，不会提交到 GitHub。
 
-## Security
+## 策略组
 
-This repository deliberately contains no subscription URL, node credential, or access token. The placeholder `__SELF_HOSTED_SUBSCRIPTION_URL__` must be replaced only by a private distribution service or a local private copy.
+- `Manual`：全部自建与机场节点、自动测速、DIRECT、BLOCK。
+- `Default Proxy`、`AI`、`Media`、`Emby`：自建节点、自动测速、Manual、DIRECT、BLOCK。
+- `BLOCK` 使用 Mihomo 的 `REJECT`。
 
-Do not place a real subscription URL in this public repository.
+## 管理与使用
 
-## Private multi-device subscription
+打开 Worker 的 `/admin` 页面，输入管理令牌后添加订阅源。每个来源选择“自建”或“机场”；至少需保留一个自建来源。生成设备订阅后，可复制链接、直接导入 Clash Verge 或 Shadowrocket。Stash 会复制链接并打开应用，请在 Stash 内粘贴导入。
 
-The next deployment step is a small private endpoint, such as a Cloudflare Worker. It reads this template, replaces the placeholder using a secret stored in the Worker, and serves a random private subscription URL to OpenClash and other clients.
+OpenClash 使用同一订阅链接添加订阅配置。规则更新后，客户端下次更新订阅会自动获取新规则。
+
+## 自动部署
+
+推送到 `main` 时，GitHub Actions 会运行模板校验，然后部署 Cloudflare Worker。需要在仓库的 Actions secrets 中配置 `CLOUDFLARE_API_TOKEN`；不要添加 `ADMIN_TOKEN` 或 `CONFIG_KEY`，它们已作为 Worker secrets 单独保存。
