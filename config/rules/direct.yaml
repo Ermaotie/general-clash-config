@@ -3,3 +3,5 @@
 # that is otherwise sent to the proxy.
 payload:
   - DOMAIN,tv.micu.hk
+  - DOMAIN-SUFFIX,yocomic.com
+  - DOMAIN-SUFFIX,yucomic.com
